@@ -1,53 +1,107 @@
 <script setup lang="ts">
 import { saveAs } from 'file-saver';
+import { nextTick } from 'vue';
 
 const urlRef = ref<HTMLInputElement>();
 const videoUrl = ref('');
 const downloadStatus = ref('');
 const downloadError = ref('');
 const isDownloading = ref(false);
+const progressMessages = ref<string[]>([]);
+let eventSource: EventSource | null = null;
+
+const closeEventSource = () => {
+	if (!eventSource) return;
+	eventSource.close();
+	eventSource = null;
+};
+
+onUnmounted(() => {
+	closeEventSource();
+});
+
+const reset = () => {
+	progressMessages.value = [];
+	downloadStatus.value = '';
+	downloadError.value = '';
+	isDownloading.value = false;
+	closeEventSource();
+};
+
+const initializeDownload = async ():Promise<string> => {
+	const { downloadId } = await $fetch<{downloadId:string}>('/api/prepare-download', {
+		method: 'POST',
+		body: {
+			videoUrl: videoUrl.value,
+		},
+	});
+	return downloadId;
+}
+
+const progressEventListener = async(downloadId:string) => {
+	eventSource = new EventSource(`/api/download-progress?id=${downloadId}`);
+	eventSource.onmessage = (event) => {
+		const data = JSON.parse(event.data);
+		progressMessages.value.push(data.message);
+
+		// scroll to the bottom
+		nextTick(() => {
+			const container = document.querySelector('.progress-container')!;
+			container.scrollTop = container.scrollHeight;
+		});
+	};
+}
+
+const downloadFile = async (downloadId:string) => {
+	const { _data: blob, headers } = await $fetch.raw<Blob>('/api/download', {
+		method: 'POST',
+		body: {
+			videoUrl: videoUrl.value,
+			downloadId: downloadId,
+		},
+		responseType: 'blob',
+	});
+	downloadStatus.value = 'Video download completed!';
+
+	const contentDisposition = headers.get('Content-Disposition')!;
+	const filename = contentDisposition.match(/filename="(.+?)"/)![1];
+	saveAs(blob!, filename);
+}
 
 const handleSubmit = async () => {
 	try {
+		reset();
+		isDownloading.value = true;
 		downloadStatus.value =
 			'Starting video download. This may take a while for large videos...';
-		downloadError.value = '';
-		isDownloading.value = true;
 
-		const response = await fetch('/api/download', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				videoUrl: videoUrl.value,
-			}),
-		});
-
-		const contentDisposition = response.headers.get('Content-Disposition')!;
-		const filename = contentDisposition.match(/filename="(.+?)"/)![1];
-
-		const blob = await response.blob();
-		saveAs(blob, filename);
-
-		downloadStatus.value = 'Video download completed!';
+		const downloadId = await initializeDownload();
+		await progressEventListener(downloadId);
+		await downloadFile(downloadId);
 	} catch (e) {
 		const error = e as Error;
-		console.error('Error downloading video:', error);
+		console.error(`Error downloading video: ${error}`);
 		downloadError.value = error.message;
 		downloadStatus.value = '';
 	} finally {
 		isDownloading.value = false;
+		closeEventSource();
 	}
 };
 </script>
 
 <template>
 	<div class="main">
-		<form @submit="handleSubmit" class="centered">
+		<form @submit.prevent="handleSubmit" class="centered">
 			<div class="header-container">
 				<h3>Video Downloader</h3>
-				<a href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options" target="_blank" class="help-link">Help</a>
+				<a
+					href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options"
+					target="_blank"
+					class="help-link"
+					>
+					Help
+				</a>
 			</div>
 			<div class="input-group">
 				<input
@@ -60,10 +114,7 @@ const handleSubmit = async () => {
 					class="url-input"
 					:disabled="isDownloading"
 				/>
-				<button
-					type="submit"
-					:disabled="!videoUrl || isDownloading"
-				>
+				<button type="submit" :disabled="!videoUrl || isDownloading">
 					{{ isDownloading ? 'Downloading...' : 'Download Video' }}
 				</button>
 			</div>
@@ -76,6 +127,20 @@ const handleSubmit = async () => {
 				</div>
 				<div class="error-message" :class="{ hidden: !downloadError }">
 					{{ downloadError || '-' }}
+				</div>
+			</div>
+
+			<!-- Progress messages container -->
+			<div
+				class="progress-container"
+				:class="{ hidden: !progressMessages.length }"
+			>
+				<div
+					v-for="(message, index) in progressMessages"
+					:key="index"
+					class="progress-message"
+				>
+					{{ message }}
 				</div>
 			</div>
 		</form>
@@ -105,16 +170,16 @@ const handleSubmit = async () => {
 	align-items: center;
 	justify-content: center;
 	color: white;
-	width: fit-content;
-	min-width: 35rem;
-	gap: 1rem;
+	width: min(50rem, 75%);
+	gap: 1.5rem;
+	padding-block: 3rem;
 }
 
 .input-group {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	gap: 0.5rem;
+	gap: 1rem;
 	width: 100%;
 }
 
@@ -191,5 +256,29 @@ button:disabled {
 		font-weight: bold;
 		width: calc(100% - var(--status-gap));
 	}
+}
+
+.progress-container {
+	flex-grow: 1;
+	padding-inline: 1rem;
+	border-radius: 8px;
+	background-color: rgba(0, 0, 0, 0.3);
+	width: 100%;
+	overflow-y: auto;
+	font-family: 'Courier New', sans-serif;
+	font-size: 1rem;
+	color: #e0e0e0;
+	text-align: left;
+}
+
+.progress-message {
+	padding-block: 0.25rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.progress-message:last-child {
+	border-bottom: none;
 }
 </style>

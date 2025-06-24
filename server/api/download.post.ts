@@ -1,17 +1,17 @@
 import { defineEventHandler, readBody, sendStream } from 'h3';
-import { execSync } from 'child_process';
+import {  spawn } from 'child_process';
 import { readdirSync, createReadStream, unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
 import { stat } from 'fs/promises';
 import mime from 'mime-types';
-import { createSha256Base64UrlHash } from '~~/server/utils/hashUtil';
 import { ffmpegExists, ytDlpExists } from '~~/server/utils/commandUtil';
+import {  sendMessageToListeners } from './download-progress.get';
 
 export default defineEventHandler(async (event) => {
 	const DOWNLOADS_DIR = process.env.APP_DOWNLOAD_DIR!;
-	const { videoUrl } = await readBody(event);
-	const baseFileName = createSha256Base64UrlHash(videoUrl);
-	let actualOutputPath:string;
+	const { videoUrl, downloadId } = await readBody(event);
+	const baseFileName = downloadId;
+	let actualOutputPath: string;
 
 	try {
 		// validate
@@ -20,8 +20,44 @@ export default defineEventHandler(async (event) => {
 
 		// download file
 		const outputPattern = join(DOWNLOADS_DIR, baseFileName);
-		execSync(`yt-dlp -o "${outputPattern}" "${videoUrl}"`, {
-			stdio: 'inherit',
+		await new Promise<void>((resolve, reject) => {
+			const ytDlp = spawn('yt-dlp', ['-o', outputPattern, videoUrl]);
+
+			ytDlp.stdout.on('data', (data) => {
+				const message = data.toString().trim();
+				if (message) {
+					sendMessageToListeners(downloadId, message);
+				}
+			});
+
+			ytDlp.stderr.on('data', (data) => {
+				const message = data.toString().trim();
+				if (message) {
+					sendMessageToListeners(downloadId, `Error: ${message}`);
+				}
+			});
+
+			ytDlp.on('close', (code) => {
+				if (code === 0) {
+					sendMessageToListeners(
+						downloadId,
+						'Download completed successfully.'
+					);
+					resolve();
+				} else {
+					const errorMsg = `Process exited with code ${code}`;
+					sendMessageToListeners(downloadId, errorMsg);
+					reject(new Error(errorMsg));
+				}
+			});
+
+			ytDlp.on('error', (err) => {
+				sendMessageToListeners(
+					downloadId,
+					`Failed to start process: ${err.message}`
+				);
+				reject(err);
+			});
 		});
 
 		// get the downloaded file
