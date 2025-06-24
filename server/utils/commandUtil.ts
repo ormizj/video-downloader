@@ -5,7 +5,7 @@ export const ytDlpExists = () => {
 		execSync('yt-dlp --version', { stdio: 'ignore' });
 		return true;
 	} catch (error) {
-		return false;
+		throw new Error('"yt-dlp" is not installed or not in PATH');
 	}
 };
 
@@ -14,6 +14,6 @@ export const ffmpegExists = () => {
 		execSync('ffmpeg -version', { stdio: 'ignore' });
 		return true;
 	} catch (error) {
-		return false;
+		throw new Error('"ffmpeg" is not installed or not in PATH');
 	}
 };

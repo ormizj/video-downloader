@@ -13,51 +13,31 @@ export default defineEventHandler(async (event) => {
 	const { videoUrl } = await readBody(event);
 	const baseFileName = createSha256Base64UrlHash(videoUrl);
 
-	console.log('Received video download request:', { videoUrl });
-
-	const isYtDlpInstalled = ytDlpExists();
-	const isFfmpegInstalled = ffmpegExists();
-
-	if (!isYtDlpInstalled || !isFfmpegInstalled) {
-		console.error('Required commands not found:', {
-			'yt-dlp': isYtDlpInstalled ? 'Found' : 'Not found',
-			'ffmpeg': isFfmpegInstalled ? 'Found' : 'Not found',
-		});
-
-		event.node.res.statusCode = 500;
-		return {
-			success: false,
-			message: 'Required software not installed',
-			error:
-				`Missing required software: ${!isYtDlpInstalled ? 'yt-dlp' : ''} ${!isFfmpegInstalled ? 'ffmpeg' : ''}`.trim(),
-		};
-	}
-
 	try {
+		// validate
+		ytDlpExists();
+		ffmpegExists();
 		ensureDirectory(DOWNLOADS_DIR);
+
+		// download file
 		const outputPattern = join(DOWNLOADS_DIR, baseFileName);
-
-		console.log('Downloading video from:', videoUrl);
-		console.log('Output pattern:', outputPattern);
-
 		execSync(`yt-dlp -o "${outputPattern}" "${videoUrl}"`, {
 			stdio: 'inherit',
 		});
 
+		// get the downloaded file
 		const files = readdirSync(DOWNLOADS_DIR);
 		const downloadedFile = files.find((file) => file.startsWith(baseFileName))!;
 
+		// path to the downloaded file
 		const actualOutputPath = join(DOWNLOADS_DIR, downloadedFile);
-		console.log('Actual downloaded file:', actualOutputPath);
-
 		const stats = await stat(actualOutputPath);
 
+		// get file extension
 		const fileExtension = downloadedFile.split('.').pop()!;
-		const contentType = mime.lookup(fileExtension);
+		const contentType = mime.lookup(fileExtension) as string;
 
-		console.log('Detected file type:', contentType);
-		console.log('Video downloaded successfully, streaming to client');
-
+		// set headers
 		event.node.res.setHeader('Content-Type', contentType);
 		event.node.res.setHeader('Content-Length', stats.size);
 		event.node.res.setHeader(
@@ -65,16 +45,17 @@ export default defineEventHandler(async (event) => {
 			`attachment; filename="${downloadedFile}"`
 		);
 
+		// return file to client
 		const stream = createReadStream(actualOutputPath);
 		return sendStream(event, stream);
 	} catch (e) {
 		const error = e as Error;
-		console.error('Error downloading video:', error);
-		event.node.res.statusCode = 500;
+		console.error(`Error downloading video: ${videoUrl}`, error);
+		event.node.res.statusCode = 422;
 		return {
 			success: false,
-			message: 'Error downloading video',
-			error: error.message,
+			message: error.message,
+			error: error,
 		};
 	}
 });
