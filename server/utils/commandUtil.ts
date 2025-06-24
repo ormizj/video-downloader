@@ -1,9 +1,9 @@
-import { execSync, spawn } from 'child_process';
+import {  execFileSync, spawn } from 'child_process';
 import { sendMessageToListeners } from '../api/download-progress.get';
 
 export const ytDlpExists = () => {
 	try {
-		execSync('yt-dlp --version', { stdio: 'ignore' });
+		execFileSync('yt-dlp', ['--version'], { stdio: 'ignore' });
 		return true;
 	} catch (error) {
 		throw new Error('"yt-dlp" is not installed or not in PATH');
@@ -12,7 +12,7 @@ export const ytDlpExists = () => {
 
 export const ffmpegExists = () => {
 	try {
-		execSync('ffmpeg -version', { stdio: 'ignore' });
+		execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' });
 		return true;
 	} catch (error) {
 		throw new Error('"ffmpeg" is not installed or not in PATH');
@@ -25,7 +25,7 @@ export const executeYtDlp = (
 	downloadId: string
 ): Promise<void> => {
 	return new Promise<void>((resolve, reject) => {
-		const ytDlp = spawn('yt-dlp', ['-o', outputPattern, videoUrl]);
+		const ytDlp = spawn('yt-dlp', ['-o', outputPattern, videoUrl], { shell: false });
 
 		ytDlp.stdout.on('data', (data) => {
 			const message = data.toString().trim();

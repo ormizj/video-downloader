@@ -7,9 +7,8 @@ app.whenReady().then(() => {
 	ensureDirectory(DOWNLOADS_DIR);
 	cleanDirectory(DOWNLOADS_DIR);
 	new BrowserWindow({
-		icon: 'public/icon.svg',
 		width: 800,
-		height: 600
+		height: 600,
 	})
 		.loadURL(process.env.VITE_DEV_SERVER_URL!)
 		.catch(console.error);

@@ -13,8 +13,7 @@
   },
   "build": {
     "appId": "com.videodownloader.app",
-    "productName": "Video Downloader",
-    "icon": "public/icon.svg"
+    "productName": "Video Downloader"
   },
   "dependencies": {
     "file-saver": "^2.0.5",
