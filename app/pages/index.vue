@@ -28,17 +28,20 @@ const reset = () => {
 	closeEventSource();
 };
 
-const initializeDownload = async ():Promise<string> => {
-	const { downloadId } = await $fetch<{downloadId:string}>('/api/prepare-download', {
-		method: 'POST',
-		body: {
-			videoUrl: videoUrl.value,
-		},
-	});
+const initializeDownload = async (): Promise<string> => {
+	const { downloadId } = await $fetch<{ downloadId: string }>(
+		'/api/generate-download-id',
+		{
+			method: 'POST',
+			body: {
+				videoUrl: videoUrl.value,
+			},
+		}
+	);
 	return downloadId;
-}
+};
 
-const progressEventListener = async(downloadId:string) => {
+const progressEventListener = async (downloadId: string) => {
 	eventSource = new EventSource(`/api/download-progress?id=${downloadId}`);
 	eventSource.onmessage = (event) => {
 		const data = JSON.parse(event.data);
@@ -50,9 +53,9 @@ const progressEventListener = async(downloadId:string) => {
 			container.scrollTop = container.scrollHeight;
 		});
 	};
-}
+};
 
-const downloadFile = async (downloadId:string) => {
+const downloadFile = async (downloadId: string) => {
 	const { _data: blob, headers } = await $fetch.raw<Blob>('/api/download', {
 		method: 'POST',
 		body: {
@@ -66,7 +69,7 @@ const downloadFile = async (downloadId:string) => {
 	const contentDisposition = headers.get('Content-Disposition')!;
 	const filename = contentDisposition.match(/filename="(.+?)"/)![1];
 	saveAs(blob!, filename);
-}
+};
 
 const handleSubmit = async () => {
 	try {
@@ -99,7 +102,7 @@ const handleSubmit = async () => {
 					href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options"
 					target="_blank"
 					class="help-link"
-					>
+				>
 					Help
 				</a>
 			</div>
