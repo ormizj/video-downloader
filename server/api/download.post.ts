@@ -5,7 +5,6 @@ import { join, resolve } from 'path';
 import { stat } from 'fs/promises';
 import mime from 'mime-types';
 import { createSha256Base64UrlHash } from '~~/server/utils/hashUtil';
-import { ensureDirectory } from '~~/server/utils/fileUtil';
 import { ffmpegExists, ytDlpExists } from '~~/server/utils/commandUtil';
 
 export default defineEventHandler(async (event) => {
@@ -17,7 +16,6 @@ export default defineEventHandler(async (event) => {
 		// validate
 		ytDlpExists();
 		ffmpegExists();
-		ensureDirectory(DOWNLOADS_DIR);
 
 		// download file
 		const outputPattern = join(DOWNLOADS_DIR, baseFileName);
