@@ -42,8 +42,14 @@ const initializeDownload = async (): Promise<string> => {
 };
 
 const progressEventListener = async (downloadId: string) => {
+	let isFirstMessage = true;
 	eventSource = new EventSource(`/api/download-progress?id=${downloadId}`);
 	eventSource.onmessage = (event) => {
+		if (isFirstMessage) {
+			isFirstMessage = false;
+			downloadStatus.value = 'Downloading...';
+		}
+		
 		const data = JSON.parse(event.data);
 		progressMessages.value.push(data.message);
 
