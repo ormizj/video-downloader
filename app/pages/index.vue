@@ -45,7 +45,6 @@ const handleDownloadVideo = async () => {
 	<div class="main">
 		<div class="centered">
 			<h3>Video Downloader</h3>
-			<br />
 			<div class="input-group">
 				<input
 					v-model="videoUrl"
@@ -61,7 +60,6 @@ const handleDownloadVideo = async () => {
 					{{ isDownloading ? 'Downloading...' : 'Download Video' }}
 				</button>
 			</div>
-			<br />
 			<div
 				class="status-container"
 				:class="{ hidden: !downloadStatus && !downloadError }"
@@ -70,7 +68,7 @@ const handleDownloadVideo = async () => {
 					{{ downloadStatus || '-' }}
 				</div>
 				<div class="error-message" :class="{ hidden: !downloadError }">
-					Error: {{ downloadError || '-' }}
+					{{ downloadError || '-' }}
 				</div>
 			</div>
 		</div>
@@ -101,6 +99,8 @@ const handleDownloadVideo = async () => {
 	justify-content: center;
 	color: white;
 	width: fit-content;
+	min-width: 35rem;
+	gap: 1rem;
 }
 
 .input-group {
@@ -108,10 +108,11 @@ const handleDownloadVideo = async () => {
 	flex-direction: row;
 	align-items: center;
 	gap: 0.5rem;
+	width: 100%;
 }
 
 .url-input {
-	min-width: 300px;
+	flex-grow: 1;
 	padding: 8px;
 	border-radius: 4px;
 	border: 1px solid #ccc;
@@ -135,21 +136,27 @@ button:disabled {
 }
 
 .status-container {
-	padding: 1rem;
+	--status-gap: 1rem;
+
+	position: relative;
+	padding: 1.5rem var(--status-gap);
 	border-radius: 8px;
 	background-color: rgba(255, 255, 255, 0.1);
 	width: 100%;
 	text-align: center;
 	text-wrap: wrap;
-}
 
-.status-message {
-	color: #4caf50;
-	font-weight: bold;
-}
+	.status-message {
+		color: #4caf50;
+		font-weight: bold;
+	}
 
-.error-message {
-	color: #f44336;
-	font-weight: bold;
+	.error-message {
+		margin-top: 0.125rem;
+		position: absolute;
+		color: #f44336;
+		font-weight: bold;
+		width: calc(100% - var(--status-gap));
+	}
 }
 </style>
