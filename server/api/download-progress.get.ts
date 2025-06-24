@@ -42,11 +42,9 @@ export default defineEventHandler(async (event) => {
 	return new Promise(() => {
 		// cleanup
 		event.node.req.on('close', () => {
-			// Remove this client from the listeners
 			if (listeners[downloadId]) {
 				listeners[downloadId].delete(event.node.res);
 
-				// Clean up empty listener sets
 				if (listeners[downloadId].size === 0) {
 					delete listeners[downloadId];
 				}
