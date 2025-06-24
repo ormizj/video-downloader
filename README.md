@@ -2,7 +2,7 @@
 
 A desktop application for downloading videos from various websites using yt-dlp.
 
-![Video Downloader Screenshot](screenshot.png)
+<img src="public/icon.svg" alt="Video Downloader Icon" width="128" height="128" />
 
 ## Features
 
@@ -16,7 +16,8 @@ A desktop application for downloading videos from various websites using yt-dlp.
 
 ### Download the Executable
 
-Download the latest release for your operating system from the [Releases](https://github.com/yourusername/video-downloader/releases) page.
+Download the latest release for your operating system from
+the [Releases](https://github.com/yourusername/video-downloader/releases) page.
 
 ### Build from Source
 

@@ -1,5 +1,5 @@
 {
-  "name": "nuxt-app",
+  "name": "video-downloader",
   "private": true,
   "type": "module",
   "main": "dist-electron/main.js",
@@ -9,6 +9,11 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
+  },
+  "build": {
+    "appId": "com.videodownloader.app",
+    "productName": "Video Downloader",
+    "icon": "public/icon.svg"
   },
   "dependencies": {
     "file-saver": "^2.0.5",

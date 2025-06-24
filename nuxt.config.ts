@@ -6,7 +6,15 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
-  app: { cdnURL: './' },
+  app: { 
+    cdnURL: './',
+    head: {
+      title: 'Video Downloader',
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }
+      ]
+    }
+  },
   electron: {
     disableDefaultOptions: true,
     build: [
