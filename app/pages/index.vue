@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { saveAs } from 'file-saver';
 
-const videoUrl = ref('');
+const videoUrl = ref('test');
 const downloadStatus = ref('');
 const downloadError = ref('');
 const isDownloading = ref(false);
@@ -116,6 +116,11 @@ const handleDownloadVideo = async () => {
 	padding: 8px;
 	border-radius: 4px;
 	border: 1px solid #ccc;
+
+	&[disabled] {
+		color: #808080;
+		cursor: not-allowed;
+	}
 }
 
 button {
