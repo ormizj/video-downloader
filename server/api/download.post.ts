@@ -1,8 +1,15 @@
-import { defineEventHandler, readBody } from 'h3';
+import { defineEventHandler, readBody, sendStream } from 'h3';
 import { execSync } from 'child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync } from 'fs';
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	createReadStream,
+} from 'fs';
 import { join, resolve } from 'path';
 import { fileTypeFromBuffer } from 'file-type';
+import { stat } from 'fs/promises';
 
 const DOWNLOADS_DIR = resolve(process.cwd(), 'downloads');
 
@@ -80,22 +87,41 @@ export default defineEventHandler(async (event) => {
 		const actualOutputPath = join(DOWNLOADS_DIR, downloadedFile);
 		console.log('Actual downloaded file:', actualOutputPath);
 
-		// Read the file and detect its type
-		const fileBuffer = readFileSync(actualOutputPath);
+		const stats = await stat(actualOutputPath);
+
+		const fileBuffer = readFileSync(actualOutputPath, {
+			start: 0,
+			end: Math.min(stats.size, 4100),
+		});
 		const fileType = await fileTypeFromBuffer(fileBuffer);
 
-		// Use detected extension or fallback to the one from filename
-		const fileExtension = fileType?.ext || downloadedFile.split('.').pop() || 'mp4';
+		let contentType = 'application/octet-stream';
 
-		console.log('Detected file type:', fileType?.mime || 'unknown');
-		console.log('Video downloaded successfully, sending back to client');
+		if (fileType && fileType.mime) {
+			contentType = fileType.mime;
+		} else {
+			// Fallback to extension-based detection
+			const fileExtension = downloadedFile.split('.').pop() || '';
+			if (fileExtension === 'mp4') contentType = 'video/mp4';
+			else if (fileExtension === 'webm') contentType = 'video/webm';
+			else if (fileExtension === 'mkv') contentType = 'video/x-matroska';
+			else if (fileExtension === 'avi') contentType = 'video/x-msvideo';
+			else if (fileExtension === 'mov') contentType = 'video/quicktime';
+		}
 
-		return {
-			success: true,
-			message: 'Video downloaded successfully',
-			fileName: downloadedFile,
-			fileExtension: fileExtension,
-		};
+		console.log('Detected file type:', contentType);
+		console.log('Video downloaded successfully, streaming to client');
+
+		// Set response headers
+		event.node.res.setHeader('Content-Type', contentType);
+		event.node.res.setHeader('Content-Length', stats.size);
+		event.node.res.setHeader(
+			'Content-Disposition',
+			`attachment; filename="${downloadedFile}"`
+		);
+
+		const stream = createReadStream(actualOutputPath);
+		return sendStream(event, stream);
 	} catch (e) {
 		const error = e as Error;
 		console.error('Error downloading video:', error);

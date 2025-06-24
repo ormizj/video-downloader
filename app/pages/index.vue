@@ -9,20 +9,36 @@ const handleDownloadVideo = async () => {
 
 		alert('Starting video download. This may take a while for large videos...');
 
-		const response = await $fetch('/api/download', {
+		const response = await fetch('/api/download', {
 			method: 'POST',
-			body: {
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
 				videoUrl: videoUrl.value,
 				fileName: fileName,
-			},
+			}),
 		});
 
-		if (response && response.success) {
-			const actualFileName = response.fileName;
-			window.location.href = `/api/download/${actualFileName}`;
-		} else {
-			throw new Error(response?.message || 'Failed to download video');
+		if (!response.ok) {
+			const errorData = await response.json();
+			throw new Error(errorData?.message || 'Failed to download video');
 		}
+
+		const contentDisposition = response.headers.get('Content-Disposition');
+		let downloadFileName = fileName + '.mp4';
+
+		if (contentDisposition) {
+			const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
+			if (filenameMatch && filenameMatch[1]) {
+				downloadFileName = filenameMatch[1];
+			}
+		}
+
+		const blob = await response.blob();
+		saveAs(blob, downloadFileName);
+
+		alert('Video download completed!');
 	} catch (e) {
 		const error = e as Error;
 		console.error('Error downloading video:', error);
