@@ -1,11 +1,13 @@
 import { defineEventHandler, readBody, sendStream } from 'h3';
-import {  spawn } from 'child_process';
 import { readdirSync, createReadStream, unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
 import { stat } from 'fs/promises';
 import mime from 'mime-types';
-import { ffmpegExists, ytDlpExists } from '~~/server/utils/commandUtil';
-import {  sendMessageToListeners } from './download-progress.get';
+import {
+	ffmpegExists,
+	ytDlpExists,
+	executeYtDlp,
+} from '~~/server/utils/commandUtil';
 
 export default defineEventHandler(async (event) => {
 	const DOWNLOADS_DIR = process.env.APP_DOWNLOAD_DIR!;
@@ -20,45 +22,7 @@ export default defineEventHandler(async (event) => {
 
 		// download file
 		const outputPattern = join(DOWNLOADS_DIR, baseFileName);
-		await new Promise<void>((resolve, reject) => {
-			const ytDlp = spawn('yt-dlp', ['-o', outputPattern, videoUrl]);
-
-			ytDlp.stdout.on('data', (data) => {
-				const message = data.toString().trim();
-				if (message) {
-					sendMessageToListeners(downloadId, message);
-				}
-			});
-
-			ytDlp.stderr.on('data', (data) => {
-				const message = data.toString().trim();
-				if (message) {
-					sendMessageToListeners(downloadId, `Error: ${message}`);
-				}
-			});
-
-			ytDlp.on('close', (code) => {
-				if (code === 0) {
-					sendMessageToListeners(
-						downloadId,
-						'Download completed successfully.'
-					);
-					resolve();
-				} else {
-					const errorMsg = `Process exited with code ${code}`;
-					sendMessageToListeners(downloadId, errorMsg);
-					reject(new Error(errorMsg));
-				}
-			});
-
-			ytDlp.on('error', (err) => {
-				sendMessageToListeners(
-					downloadId,
-					`Failed to start process: ${err.message}`
-				);
-				reject(err);
-			});
-		});
+		await executeYtDlp(videoUrl, outputPattern, downloadId);
 
 		// get the downloaded file
 		const files = readdirSync(DOWNLOADS_DIR);

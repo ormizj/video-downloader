@@ -5,10 +5,6 @@ const listeners: Record<string, Set<any>> = {};
 
 export const sendMessageToListeners = (downloadId: string, message: string) => {
 	if (!listeners[downloadId]) return;
-
-	if (!progressStore[downloadId]) {
-		progressStore[downloadId] = [];
-	}
 	progressStore[downloadId].push(message);
 
 	for (const res of listeners[downloadId]) {
@@ -17,21 +13,12 @@ export const sendMessageToListeners = (downloadId: string, message: string) => {
 };
 
 export default defineEventHandler(async (event) => {
-	const downloadId = event.node.req.url?.split('?id=')[1];
+	// initialize
+	const downloadId = event.node.req.url?.split('?id=')[1]!;
+	if (!progressStore[downloadId]) progressStore[downloadId] = [];
+	if (!listeners[downloadId]) listeners[downloadId] = new Set();
 
-	if (!downloadId) {
-		event.node.res.statusCode = 404;
-		return { error: 'Download ID not provided' };
-	}
-
-	if (!progressStore[downloadId]) {
-		progressStore[downloadId] = [];
-	}
-
-	if (!listeners[downloadId]) {
-		listeners[downloadId] = new Set();
-	}
-
+	// headers
 	event.node.res.setHeader('Content-Type', 'text/event-stream');
 	event.node.res.setHeader('Cache-Control', 'no-cache');
 	event.node.res.setHeader('Connection', 'keep-alive');
@@ -47,6 +34,7 @@ export default defineEventHandler(async (event) => {
 
 				if (listeners[downloadId].size === 0) {
 					delete listeners[downloadId];
+					delete progressStore[downloadId];
 				}
 			}
 		});
