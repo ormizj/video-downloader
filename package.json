@@ -2,16 +2,32 @@
   "name": "nuxt-app",
   "private": true,
   "type": "module",
+  "main": "dist-electron/main.js",
   "scripts": {
-    "build": "nuxt build",
+    "build": "nuxt build --prerender && electron-builder",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "nuxt": "^3.17.5",
-    "vue": "^3.5.17",
-    "vue-router": "^4.5.1"
+    "file-saver": "^2.0.5",
+    "nuxt": "npm:nuxt-nightly@3x",
+    "vue": "latest",
+    "vue-router": "latest"
+  },
+  "devDependencies": {
+    "@electron/packager": "^18.3.4",
+    "@eslint/js": "^9.8.0",
+    "@typescript-eslint/parser": "^7.17.0",
+    "electron": "^32.0.2",
+    "electron-builder": "^25.0.5",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.27.0",
+    "globals": "^15.8.0",
+    "nuxt-electron": "^0.7.0",
+    "prettier": "^3.3.3",
+    "vite-plugin-electron": "^0.28.7",
+    "vite-plugin-electron-renderer": "^0.14.5"
   }
 }

@@ -1,5 +1,18 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-05-15',
-  devtools: { enabled: true }
-})
+  compatibilityDate: '2024-04-03',
+  devtools: { enabled: true },
+  modules: ['nuxt-electron'],
+  future: {
+    compatibilityVersion: 4,
+  },
+  app: { cdnURL: './' },
+  electron: {
+    disableDefaultOptions: true,
+    build: [
+      {
+        entry: 'electron/main.ts',
+      },
+    ],
+  },
+});
