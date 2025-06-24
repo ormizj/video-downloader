@@ -1,127 +1,83 @@
-<script setup>
-import { ref } from 'vue'
-import { saveAs } from 'file-saver'
+<script setup lang="ts">
+import { saveAs } from 'file-saver';
 
-const fileInput = ref(null);
-const res = await useFetch(`/api/excell/clear`, { method: 'POST' });
-if (import.meta.client && res.error.value) alert(`Something went wrong, couldn't clear previously uploaded files, reinstall the application`);
+const videoUrl = ref('');
+const handleDownloadVideo = async () => {
+	try {
+		const emptyBlob = new Blob([], { type: 'video/mp4' });
+		const initialFileName = videoUrl.value
+			? new URL(videoUrl.value).pathname.split('/').pop() || 'video.mp4'
+			: 'video.mp4';
+		saveAs(emptyBlob, initialFileName);
 
-const handleMergeExcel = async () => {
-    try {
-        const res = await $fetch('/api/excell/merge', {
-            method: 'POST'
-        });
-        saveAs(res);
-
-    } catch {
-        alert('Error merging files');
-    }
-}
-
-const handleUploadExcel = async () => {
-    const formData = new FormData()
-    for (let i = 0; i < fileInput.value.files.length; i++) {
-        formData.append('files', fileInput.value.files[i])
-    }
-
-    try {
-        await $fetch('/api/excell/upload', {
-            method: 'POST',
-            body: formData
-        });
-    } catch {
-        alert('Error uploading files');
-    }
-}
+		await $fetch('/api/download', {
+			method: 'POST',
+		});
+	} catch (error) {
+		alert('Error downloading video');
+	}
+};
 </script>
 
 <template>
-    <div class="overlay">
-        <div class="long overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="short overlay-element"></div>
-        <div class="long overlay-element"></div>
-    </div>
-    <div class="main">
-        <div class="centered">
-            <h3>Upload a folders containing ".xls/x" files and then press "Merge Excels"</h3>
-            <br>
-            <div>
-                <input ref="fileInput" type="file" name="file" webkitdirectory directory @change="handleUploadExcel">
-                <button @click="handleMergeExcel">Merge Excels</button>
-            </div>
-        </div>
-    </div>
+	<div class="main">
+		<div class="centered">
+			<h3>Video Downloader</h3>
+			<br />
+			<div class="input-group">
+				<input
+					v-model="videoUrl"
+					type="text"
+					placeholder="Enter video URL"
+					class="url-input"
+				/>
+				<button @click="handleDownloadVideo">Download Video</button>
+			</div>
+		</div>
+	</div>
 </template>
 
 <style scoped>
-.overlay {
-    position: fixed;
-    display: flex;
-    flex-direction: column;
-    width: 100vw;
-    z-index: 200;
-    pointer-events: none;
-    /* Allow events to pass through */
-}
-
-.overlay-element {
-    pointer-events: auto;
-    /* Capture events on filled areas */
-}
-
-.long {
-    background-color: blue;
-    height: 30px;
-    width: 100%;
-}
-
-.short {
-    background-color: blue;
-    height: 30px;
-    width: 10%;
-}
-
-
-
 .main {
-    width: 100vw;
-    height: 100vh;
-    background-color: rgb(25, 25, 25);
-    position: fixed;
-    top: 0;
-    left: 0
+	width: 100vw;
+	height: 100vh;
+	background-color: rgb(25, 25, 25);
+	position: fixed;
+	top: 0;
+	left: 0;
 }
 
 .centered {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: white;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	color: white;
 }
 
-.status {
-    font-size: larger;
+.input-group {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.url-input {
+	min-width: 300px;
+	padding: 8px;
+	border-radius: 4px;
+	border: 1px solid #ccc;
 }
 
 button {
-    cursor: pointer;
+	cursor: pointer;
+	padding: 8px 16px;
+	border-radius: 4px;
+	border: none;
+	background-color: #4caf50;
+	color: white;
+	font-weight: bold;
 }
 </style>
