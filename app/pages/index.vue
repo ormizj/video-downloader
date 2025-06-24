@@ -1,29 +1,34 @@
 <script setup lang="ts">
-import { saveAs } from 'file-saver';
-
 const videoUrl = ref('');
 
 const handleDownloadVideo = async () => {
 	try {
-		const emptyBlob = new Blob([], { type: 'video/mp4' });
-		const initialFileName =
-			new URL(videoUrl.value).pathname.split('/').pop() || 'video.mp4';
+		let fileName = 'video';
+		const url = new URL(videoUrl.value);
 
-		// Save the empty file
-		saveAs(emptyBlob, initialFileName);
+		alert('Starting video download. This may take a while for large videos...');
 
-		// Automatically send the file path to the server
-		await $fetch('/api/download', {
+		const response = await $fetch('/api/download', {
 			method: 'POST',
 			body: {
 				videoUrl: videoUrl.value,
-				filePath: initialFileName,
+				fileName: fileName,
 			},
 		});
 
-		alert('Video download request sent to server successfully!');
-	} catch (error) {
-		alert('Error downloading video');
+		if (response && response.success) {
+			const actualFileName = response.fileName;
+
+			window.location.href = `/api/download/${actualFileName}`;
+
+			alert('Video download completed!');
+		} else {
+			throw new Error(response?.message || 'Failed to download video');
+		}
+	} catch (e) {
+		const error = e as Error;
+		console.error('Error downloading video:', error);
+		alert(`Error downloading video: ${error.message}`);
 	}
 };
 </script>
