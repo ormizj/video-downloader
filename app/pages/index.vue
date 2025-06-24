@@ -2,17 +2,26 @@
 import { saveAs } from 'file-saver';
 
 const videoUrl = ref('');
+
 const handleDownloadVideo = async () => {
 	try {
 		const emptyBlob = new Blob([], { type: 'video/mp4' });
-		const initialFileName = videoUrl.value
-			? new URL(videoUrl.value).pathname.split('/').pop() || 'video.mp4'
-			: 'video.mp4';
+		const initialFileName =
+			new URL(videoUrl.value).pathname.split('/').pop() || 'video.mp4';
+
+		// Save the empty file
 		saveAs(emptyBlob, initialFileName);
 
+		// Automatically send the file path to the server
 		await $fetch('/api/download', {
 			method: 'POST',
+			body: {
+				videoUrl: videoUrl.value,
+				filePath: initialFileName,
+			},
 		});
+
+		alert('Video download request sent to server successfully!');
 	} catch (error) {
 		alert('Error downloading video');
 	}
@@ -31,7 +40,9 @@ const handleDownloadVideo = async () => {
 					placeholder="Enter video URL"
 					class="url-input"
 				/>
-				<button @click="handleDownloadVideo">Download Video</button>
+				<button @click="handleDownloadVideo" :disabled="!videoUrl">
+					Download Video
+				</button>
 			</div>
 		</div>
 	</div>
@@ -79,5 +90,12 @@ button {
 	background-color: #4caf50;
 	color: white;
 	font-weight: bold;
+}
+
+button:disabled {
+	background-color: #cccccc;
+	color: #666666;
+	cursor: not-allowed;
+	opacity: 0.5;
 }
 </style>
