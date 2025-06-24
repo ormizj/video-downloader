@@ -1,14 +1,14 @@
 import { defineEventHandler, readBody, sendStream } from 'h3';
 import { execSync } from 'child_process';
 import { readdirSync, createReadStream } from 'fs';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import { stat } from 'fs/promises';
 import mime from 'mime-types';
 import { createSha256Base64UrlHash } from '~~/server/utils/hashUtil';
 import { ffmpegExists, ytDlpExists } from '~~/server/utils/commandUtil';
 
 export default defineEventHandler(async (event) => {
-	const DOWNLOADS_DIR = resolve(process.cwd(), 'downloads');
+	const DOWNLOADS_DIR = process.env.APP_DOWNLOAD_DIR!;
 	const { videoUrl } = await readBody(event);
 	const baseFileName = createSha256Base64UrlHash(videoUrl);
 

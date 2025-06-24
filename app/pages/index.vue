@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { saveAs } from 'file-saver';
 
-const videoUrl = ref('test');
+const videoUrl = ref('');
 const downloadStatus = ref('');
 const downloadError = ref('');
 const isDownloading = ref(false);

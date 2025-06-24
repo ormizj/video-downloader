@@ -1,8 +1,7 @@
 import { app, BrowserWindow } from 'electron';
-import { resolve } from 'path';
 import { cleanDirectory, ensureDirectory } from '../server/utils/fileUtil';
 
-const DOWNLOADS_DIR = resolve(process.cwd(), 'downloads');
+const DOWNLOADS_DIR = process.env.APP_DOWNLOAD_DIR!;
 
 app.whenReady().then(() => {
 	ensureDirectory(DOWNLOADS_DIR);
