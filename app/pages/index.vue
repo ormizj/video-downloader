@@ -90,8 +90,8 @@ const handleSubmit = async () => {
 	} catch (e) {
 		const error = e as Error;
 		console.error(`Error downloading video: ${error}`);
+		downloadStatus.value = 'Video download failed!'
 		downloadError.value = error.message;
-		downloadStatus.value = '';
 	} finally {
 		isDownloading.value = false;
 		closeEventSource();
