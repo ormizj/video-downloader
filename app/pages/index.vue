@@ -26,15 +26,13 @@ const handleDownloadVideo = async () => {
 		}
 
 		const contentDisposition = response.headers.get('Content-Disposition');
-		let downloadFileName = fileName + '.mp4';
+		let downloadFileName = fileName; // Default without extension
 
-		if (contentDisposition) {
 			const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
 			if (filenameMatch && filenameMatch[1]) {
 				downloadFileName = filenameMatch[1];
 			}
-		}
-
+ 
 		const blob = await response.blob();
 		saveAs(blob, downloadFileName);
 
