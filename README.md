@@ -1,75 +1,84 @@
-# Nuxt Minimal Starter
+# Video Downloader
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+A desktop application for downloading videos from various websites using yt-dlp.
 
-## Setup
+![Video Downloader Screenshot](screenshot.png)
 
-Make sure to install dependencies:
+## Features
 
-```bash
-# npm
-npm install
+- Simple and intuitive user interface
+- Download videos from YouTube, Vimeo, and many other platforms
+- Real-time download progress tracking
+- Cross-platform desktop application (Windows, macOS, Linux)
+- Built with Electron, Nuxt.js, and Vue.js
 
-# pnpm
-pnpm install
+## Installation
 
-# yarn
-yarn install
+### Download the Executable
 
-# bun
-bun install
-```
+Download the latest release for your operating system from the [Releases](https://github.com/yourusername/video-downloader/releases) page.
 
-## Development Server
+### Build from Source
 
-Start the development server on `http://localhost:3000`:
+If you prefer to build the application from source:
 
-```bash
-# npm
-npm run dev
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/video-downloader.git
+   cd video-downloader
+   ```
 
-# pnpm
-pnpm dev
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-# yarn
-yarn dev
+3. Build the application:
+   ```bash
+   npm run build
+   ```
 
-# bun
-bun run dev
-```
+   This will create executables in the `dist` directory.
 
-## Production
+## Development
 
-Build the application for production:
+### Prerequisites
 
-```bash
-# npm
-npm run build
+- Node.js (v18 or later recommended)
+- npm or yarn
 
-# pnpm
-pnpm build
+### Setup Development Environment
 
-# yarn
-yarn build
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-# bun
-bun run build
-```
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-Locally preview production build:
+## How to Use
 
-```bash
-# npm
-npm run preview
+1. Launch the application
+2. Enter the URL of the video you want to download
+3. Click the "Download Video" button
+4. Wait for the download to complete
+5. The video will be saved to your downloads folder
 
-# pnpm
-pnpm preview
+## Technologies
 
-# yarn
-yarn preview
+- [Electron](https://www.electronjs.org/) - Desktop application framework
+- [Nuxt.js](https://nuxt.com/) - Vue.js framework
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Video downloader engine
+- [FFmpeg](https://ffmpeg.org/) - Media processing framework
 
-# bun
-bun run preview
-```
+## License
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+MIT
+
+## Acknowledgements
+
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) for the powerful video downloading capabilities
+- [FFmpeg](https://ffmpeg.org/) for media processing and conversion functionality
