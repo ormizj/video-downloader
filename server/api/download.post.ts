@@ -1,7 +1,8 @@
 import { defineEventHandler, readBody } from 'h3';
 import { execSync } from 'child_process';
-import { existsSync, mkdirSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
+import { fileTypeFromBuffer } from 'file-type';
 
 const DOWNLOADS_DIR = resolve(process.cwd(), 'downloads');
 
@@ -79,8 +80,14 @@ export default defineEventHandler(async (event) => {
 		const actualOutputPath = join(DOWNLOADS_DIR, downloadedFile);
 		console.log('Actual downloaded file:', actualOutputPath);
 
-		const fileExtension = downloadedFile.split('.').pop();
+		// Read the file and detect its type
+		const fileBuffer = readFileSync(actualOutputPath);
+		const fileType = await fileTypeFromBuffer(fileBuffer);
 
+		// Use detected extension or fallback to the one from filename
+		const fileExtension = fileType?.ext || downloadedFile.split('.').pop() || 'mp4';
+
+		console.log('Detected file type:', fileType?.mime || 'unknown');
 		console.log('Video downloaded successfully, sending back to client');
 
 		return {

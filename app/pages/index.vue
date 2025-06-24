@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { saveAs } from 'file-saver';
+
 const videoUrl = ref('');
 
 const handleDownloadVideo = async () => {
 	try {
 		let fileName = 'video';
-		const url = new URL(videoUrl.value);
 
 		alert('Starting video download. This may take a while for large videos...');
 
@@ -18,10 +19,7 @@ const handleDownloadVideo = async () => {
 
 		if (response && response.success) {
 			const actualFileName = response.fileName;
-
 			window.location.href = `/api/download/${actualFileName}`;
-
-			alert('Video download completed!');
 		} else {
 			throw new Error(response?.message || 'Failed to download video');
 		}
