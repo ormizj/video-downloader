@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { saveAs } from 'file-saver';
 
+const urlRef = ref<HTMLInputElement>();
 const videoUrl = ref('');
 const downloadStatus = ref('');
 const downloadError = ref('');
 const isDownloading = ref(false);
 
-const handleDownloadVideo = async () => {
+const handleSubmit = async () => {
 	try {
 		downloadStatus.value =
 			'Starting video download. This may take a while for large videos...';
@@ -43,13 +44,16 @@ const handleDownloadVideo = async () => {
 
 <template>
 	<div class="main">
-		<div class="centered">
+		<form @submit="handleSubmit" class="centered">
 			<div class="header-container">
 				<h3>Video Downloader</h3>
 				<a href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options" target="_blank" class="help-link">Help</a>
 			</div>
 			<div class="input-group">
 				<input
+					id="url"
+					@focus="urlRef!.select()"
+					ref="urlRef"
 					v-model="videoUrl"
 					type="text"
 					placeholder="Enter video URL"
@@ -57,7 +61,7 @@ const handleDownloadVideo = async () => {
 					:disabled="isDownloading"
 				/>
 				<button
-					@click="handleDownloadVideo"
+					type="submit"
 					:disabled="!videoUrl || isDownloading"
 				>
 					{{ isDownloading ? 'Downloading...' : 'Download Video' }}
@@ -74,7 +78,7 @@ const handleDownloadVideo = async () => {
 					{{ downloadError || '-' }}
 				</div>
 			</div>
-		</div>
+		</form>
 	</div>
 </template>
 
