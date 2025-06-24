@@ -44,7 +44,10 @@ const handleDownloadVideo = async () => {
 <template>
 	<div class="main">
 		<div class="centered">
-			<h3>Video Downloader</h3>
+			<div class="header-container">
+				<h3>Video Downloader</h3>
+				<a href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options" target="_blank" class="help-link">Help</a>
+			</div>
 			<div class="input-group">
 				<input
 					v-model="videoUrl"
@@ -138,6 +141,27 @@ button:disabled {
 	color: #666666;
 	cursor: not-allowed;
 	opacity: 0.5;
+}
+
+.header-container {
+	display: flex;
+	align-items: baseline;
+	justify-content: center;
+	gap: 1rem;
+	width: 100%;
+}
+
+.help-link {
+	color: #4caf50;
+	text-decoration: none;
+	font-size: 0.75rem;
+	font-weight: bold;
+	transition: color 0.2s ease;
+}
+
+.help-link:hover {
+	color: #81c784;
+	text-decoration: underline;
 }
 
 .status-container {
