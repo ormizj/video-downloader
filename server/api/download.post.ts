@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody, sendStream } from 'h3';
 import { execSync } from 'child_process';
-import { readdirSync, createReadStream } from 'fs';
+import { readdirSync, createReadStream, unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
 import { stat } from 'fs/promises';
 import mime from 'mime-types';
@@ -11,6 +11,7 @@ export default defineEventHandler(async (event) => {
 	const DOWNLOADS_DIR = process.env.APP_DOWNLOAD_DIR!;
 	const { videoUrl } = await readBody(event);
 	const baseFileName = createSha256Base64UrlHash(videoUrl);
+	let actualOutputPath:string;
 
 	try {
 		// validate
@@ -28,7 +29,7 @@ export default defineEventHandler(async (event) => {
 		const downloadedFile = files.find((file) => file.startsWith(baseFileName))!;
 
 		// path to the downloaded file
-		const actualOutputPath = join(DOWNLOADS_DIR, downloadedFile);
+		actualOutputPath = join(DOWNLOADS_DIR, downloadedFile);
 		const stats = await stat(actualOutputPath);
 
 		// get file extension
@@ -55,5 +56,11 @@ export default defineEventHandler(async (event) => {
 			message: error.message,
 			error: error,
 		};
+	} finally {
+		event.node.res.on('finish', () => {
+			if (existsSync(actualOutputPath)) {
+				unlinkSync(actualOutputPath);
+			}
+		});
 	}
 });

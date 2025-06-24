@@ -12,6 +12,5 @@ app.whenReady().then(() => {
 });
 
 app.on('will-quit', () => {
-	console.log('Application is quitting, cleaning downloads directory...');
 	cleanDirectory(DOWNLOADS_DIR);
 });
