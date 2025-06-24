@@ -5,8 +5,6 @@ const videoUrl = ref('');
 
 const handleDownloadVideo = async () => {
 	try {
-		let fileName = 'video';
-
 		alert('Starting video download. This may take a while for large videos...');
 
 		const response = await fetch('/api/download', {
@@ -16,25 +14,11 @@ const handleDownloadVideo = async () => {
 			},
 			body: JSON.stringify({
 				videoUrl: videoUrl.value,
-				fileName: fileName,
 			}),
 		});
 
-		if (!response.ok) {
-			const errorData = await response.json();
-			throw new Error(errorData?.message || 'Failed to download video');
-		}
-
-		const contentDisposition = response.headers.get('Content-Disposition');
-		let downloadFileName = fileName; // Default without extension
-
-			const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
-			if (filenameMatch && filenameMatch[1]) {
-				downloadFileName = filenameMatch[1];
-			}
- 
 		const blob = await response.blob();
-		saveAs(blob, downloadFileName);
+		saveAs(blob, 'video');
 
 		alert('Video download completed!');
 	} catch (e) {

@@ -1,47 +1,19 @@
 import { defineEventHandler, readBody, sendStream } from 'h3';
 import { execSync } from 'child_process';
-import {
-	existsSync,
-	mkdirSync,
-	readdirSync,
-	readFileSync,
-	createReadStream,
-} from 'fs';
+import { readdirSync, createReadStream } from 'fs';
 import { join, resolve } from 'path';
-import { fileTypeFromBuffer } from 'file-type';
 import { stat } from 'fs/promises';
-
-const DOWNLOADS_DIR = resolve(process.cwd(), 'downloads');
-
-const ensureDownloadsDir = () => {
-	if (!existsSync(DOWNLOADS_DIR)) {
-		mkdirSync(DOWNLOADS_DIR, { recursive: true });
-		console.log(`Created downloads directory at: ${DOWNLOADS_DIR}`);
-	}
-};
-
-const ytDlpExists = () => {
-	try {
-		execSync('yt-dlp --version', { stdio: 'ignore' });
-		return true;
-	} catch (error) {
-		return false;
-	}
-};
-
-const ffmpegExists = () => {
-	try {
-		execSync('ffmpeg -version', { stdio: 'ignore' });
-		return true;
-	} catch (error) {
-		return false;
-	}
-};
+import mime from 'mime-types';
+import { createSha256Base64UrlHash } from '~~/server/utils/hashUtil';
+import { ensureDirectory } from '~~/server/utils/fileUtil';
+import { ffmpegExists, ytDlpExists } from '~~/server/utils/commandUtil';
 
 export default defineEventHandler(async (event) => {
-	const { videoUrl, fileName } = await readBody(event);
+	const DOWNLOADS_DIR = resolve(process.cwd(), 'downloads');
+	const { videoUrl } = await readBody(event);
+	const baseFileName = createSha256Base64UrlHash(videoUrl);
 
-	console.log('Received video download request:', { videoUrl, fileName });
+	console.log('Received video download request:', { videoUrl });
 
 	const isYtDlpInstalled = ytDlpExists();
 	const isFfmpegInstalled = ffmpegExists();
@@ -61,11 +33,7 @@ export default defineEventHandler(async (event) => {
 	}
 
 	try {
-		ensureDownloadsDir();
-		let baseFileName = fileName;
-		baseFileName = baseFileName.replace(/\.[^/.]+$/, '');
-		baseFileName = baseFileName.replace(/[/\\?%*:|"<>]/g, '_');
-
+		ensureDirectory(DOWNLOADS_DIR);
 		const outputPattern = join(DOWNLOADS_DIR, baseFileName);
 
 		console.log('Downloading video from:', videoUrl);
@@ -76,38 +44,15 @@ export default defineEventHandler(async (event) => {
 		});
 
 		const files = readdirSync(DOWNLOADS_DIR);
-		const downloadedFile = files.find((file) => file.startsWith(baseFileName));
-
-		if (!downloadedFile) {
-			throw new Error(
-				`Downloaded file not found for base name: ${baseFileName}`
-			);
-		}
+		const downloadedFile = files.find((file) => file.startsWith(baseFileName))!;
 
 		const actualOutputPath = join(DOWNLOADS_DIR, downloadedFile);
 		console.log('Actual downloaded file:', actualOutputPath);
 
 		const stats = await stat(actualOutputPath);
 
-		const fileBuffer = readFileSync(actualOutputPath, {
-			start: 0,
-			end: Math.min(stats.size, 4100),
-		});
-		const fileType = await fileTypeFromBuffer(fileBuffer);
-
-		let contentType = 'application/octet-stream';
-
-		if (fileType && fileType.mime) {
-			contentType = fileType.mime;
-		} else {
-			// Fallback to extension-based detection
-			const fileExtension = downloadedFile.split('.').pop() || '';
-			if (fileExtension === 'mp4') contentType = 'video/mp4';
-			else if (fileExtension === 'webm') contentType = 'video/webm';
-			else if (fileExtension === 'mkv') contentType = 'video/x-matroska';
-			else if (fileExtension === 'avi') contentType = 'video/x-msvideo';
-			else if (fileExtension === 'mov') contentType = 'video/quicktime';
-		}
+		const fileExtension = downloadedFile.split('.').pop()!;
+		const contentType = mime.lookup(fileExtension);
 
 		console.log('Detected file type:', contentType);
 		console.log('Video downloaded successfully, streaming to client');
