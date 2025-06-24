@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
 			'ffmpeg': isFfmpegInstalled ? 'Found' : 'Not found',
 		});
 
+		event.node.res.statusCode = 500;
 		return {
 			success: false,
 			message: 'Required software not installed',
@@ -57,7 +58,6 @@ export default defineEventHandler(async (event) => {
 		console.log('Detected file type:', contentType);
 		console.log('Video downloaded successfully, streaming to client');
 
-		// Set response headers
 		event.node.res.setHeader('Content-Type', contentType);
 		event.node.res.setHeader('Content-Length', stats.size);
 		event.node.res.setHeader(
@@ -70,6 +70,7 @@ export default defineEventHandler(async (event) => {
 	} catch (e) {
 		const error = e as Error;
 		console.error('Error downloading video:', error);
+		event.node.res.statusCode = 500;
 		return {
 			success: false,
 			message: 'Error downloading video',

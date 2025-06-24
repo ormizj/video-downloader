@@ -2,10 +2,16 @@
 import { saveAs } from 'file-saver';
 
 const videoUrl = ref('');
+const downloadStatus = ref('');
+const downloadError = ref('');
+const isDownloading = ref(false);
 
 const handleDownloadVideo = async () => {
 	try {
-		alert('Starting video download. This may take a while for large videos...');
+		downloadStatus.value =
+			'Starting video download. This may take a while for large videos...';
+		downloadError.value = '';
+		isDownloading.value = true;
 
 		const response = await fetch('/api/download', {
 			method: 'POST',
@@ -17,14 +23,20 @@ const handleDownloadVideo = async () => {
 			}),
 		});
 
-		const blob = await response.blob();
-		saveAs(blob, 'video');
+		const contentDisposition = response.headers.get('Content-Disposition')!;
+		const filename = contentDisposition.match(/filename="(.+?)"/)![1];
 
-		alert('Video download completed!');
+		const blob = await response.blob();
+		saveAs(blob, filename);
+
+		downloadStatus.value = 'Video download completed!';
 	} catch (e) {
 		const error = e as Error;
 		console.error('Error downloading video:', error);
-		alert(`Error downloading video: ${error.message}`);
+		downloadError.value = error.message;
+		downloadStatus.value = '';
+	} finally {
+		isDownloading.value = false;
 	}
 };
 </script>
@@ -40,16 +52,36 @@ const handleDownloadVideo = async () => {
 					type="text"
 					placeholder="Enter video URL"
 					class="url-input"
+					:disabled="isDownloading"
 				/>
-				<button @click="handleDownloadVideo" :disabled="!videoUrl">
-					Download Video
+				<button
+					@click="handleDownloadVideo"
+					:disabled="!videoUrl || isDownloading"
+				>
+					{{ isDownloading ? 'Downloading...' : 'Download Video' }}
 				</button>
+			</div>
+			<br />
+			<div
+				class="status-container"
+				:class="{ hidden: !downloadStatus && !downloadError }"
+			>
+				<div class="status-message" :class="{ hidden: !downloadStatus }">
+					{{ downloadStatus || '-' }}
+				</div>
+				<div class="error-message" :class="{ hidden: !downloadError }">
+					Error: {{ downloadError || '-' }}
+				</div>
 			</div>
 		</div>
 	</div>
 </template>
 
 <style scoped>
+.hidden {
+	visibility: hidden;
+}
+
 .main {
 	width: 100vw;
 	height: 100vh;
@@ -57,6 +89,8 @@ const handleDownloadVideo = async () => {
 	position: fixed;
 	top: 0;
 	left: 0;
+	display: flex;
+	justify-content: center;
 }
 
 .centered {
@@ -66,14 +100,14 @@ const handleDownloadVideo = async () => {
 	align-items: center;
 	justify-content: center;
 	color: white;
+	width: fit-content;
 }
 
 .input-group {
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	gap: 10px;
-	margin-bottom: 10px;
+	gap: 0.5rem;
 }
 
 .url-input {
@@ -85,7 +119,7 @@ const handleDownloadVideo = async () => {
 
 button {
 	cursor: pointer;
-	padding: 8px 16px;
+	padding: 0.5rem 1rem;
 	border-radius: 4px;
 	border: none;
 	background-color: #4caf50;
@@ -98,5 +132,24 @@ button:disabled {
 	color: #666666;
 	cursor: not-allowed;
 	opacity: 0.5;
+}
+
+.status-container {
+	padding: 1rem;
+	border-radius: 8px;
+	background-color: rgba(255, 255, 255, 0.1);
+	width: 100%;
+	text-align: center;
+	text-wrap: wrap;
+}
+
+.status-message {
+	color: #4caf50;
+	font-weight: bold;
+}
+
+.error-message {
+	color: #f44336;
+	font-weight: bold;
 }
 </style>
