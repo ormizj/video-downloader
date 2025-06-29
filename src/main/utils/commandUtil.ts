@@ -1,5 +1,5 @@
-import {  execFileSync, spawn } from 'child_process';
-import { sendMessageToListeners } from '../api/download-progress.get';
+import { execFileSync, spawn } from 'child_process';
+import { sendMessageToListeners } from '../api/progressHandler';
 
 export const ytDlpExists = () => {
 	try {
@@ -25,7 +25,9 @@ export const executeYtDlp = (
 	downloadId: string
 ): Promise<void> => {
 	return new Promise<void>((resolve, reject) => {
-		const ytDlp = spawn('yt-dlp', ['-o', outputPattern, videoUrl], { shell: false });
+		const ytDlp = spawn('yt-dlp', ['-o', outputPattern, videoUrl], {
+			shell: false,
+		});
 
 		ytDlp.stdout.on('data', (data) => {
 			const message = data.toString().trim();

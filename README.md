@@ -2,7 +2,7 @@
 
 A desktop application for downloading videos from various websites using yt-dlp.
 
-<img src="public/icon.svg" alt="Video Downloader Icon" width="128" height="128" />
+<img src="src/renderer/assets/icon.svg" alt="Video Downloader Icon" width="128" height="128" />
 
 ## Features
 
@@ -10,7 +10,7 @@ A desktop application for downloading videos from various websites using yt-dlp.
 - Download videos from YouTube, Vimeo, and many other platforms
 - Real-time download progress tracking
 - Cross-platform desktop application (Windows, macOS, Linux)
-- Built with Electron, Nuxt.js, and Vue.js
+- Built with Electron, and Vue.js
 
 ## Installation
 
@@ -71,7 +71,6 @@ If you prefer to build the application from source:
 ## Technologies
 
 - [Electron](https://www.electronjs.org/) - Desktop application framework
-- [Nuxt.js](https://nuxt.com/) - Vue.js framework
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Video downloader engine
 - [FFmpeg](https://ffmpeg.org/) - Media processing framework
 

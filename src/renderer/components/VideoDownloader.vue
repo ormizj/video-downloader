@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { saveAs } from 'file-saver';
-import { nextTick } from 'vue';
+import { nextTick, ref, onUnmounted } from 'vue';
 
 const urlRef = ref<HTMLInputElement>();
+const progressContainerRef = ref<HTMLDivElement>();
 const videoUrl = ref('');
 const downloadStatus = ref('');
 const downloadError = ref('');
 const isDownloading = ref(false);
 const progressMessages = ref<string[]>([]);
-let eventSource: EventSource | null = null;
+let progressListener: (() => void) | null = null;
 
-const closeEventSource = () => {
-	if (!eventSource) return;
-	eventSource.close();
-	eventSource = null;
+const removeProgressListener = () => {
+	if (!progressListener) return;
+	progressListener();
+	progressListener = null;
 };
 
 onUnmounted(() => {
-	closeEventSource();
+	removeProgressListener();
 });
 
 const reset = () => {
@@ -25,56 +25,44 @@ const reset = () => {
 	downloadStatus.value = '';
 	downloadError.value = '';
 	isDownloading.value = false;
-	closeEventSource();
+	removeProgressListener();
 };
 
 const initializeDownload = async (): Promise<string> => {
-	const { downloadId } = await $fetch<{ downloadId: string }>(
-		'/api/generate-download-id',
-		{
-			method: 'POST',
-			body: {
-				videoUrl: videoUrl.value,
-			},
-		}
+	const { downloadId } = await window.electronAPI.generateDownloadId(
+		videoUrl.value
 	);
 	return downloadId;
 };
 
 const progressEventListener = async (downloadId: string) => {
 	let isFirstMessage = true;
-	eventSource = new EventSource(`/api/download-progress?id=${downloadId}`);
-	eventSource.onmessage = (event) => {
+
+	progressListener = window.electronAPI.onDownloadProgress((data) => {
+		if (data.downloadId !== downloadId) return;
+
 		if (isFirstMessage) {
 			isFirstMessage = false;
 			downloadStatus.value = 'Downloading...';
 		}
-		
-		const data = JSON.parse(event.data);
+
 		progressMessages.value.push(data.message);
 
-		// scroll to the bottom
 		nextTick(() => {
-			const container = document.querySelector('.progress-container')!;
-			container.scrollTop = container.scrollHeight;
+			if (!progressContainerRef.value) return;
+			progressContainerRef.value.scrollTop =
+				progressContainerRef.value.scrollHeight;
 		});
-	};
+	});
 };
 
 const downloadFile = async (downloadId: string) => {
-	const { _data: blob, headers } = await $fetch.raw<Blob>('/api/download', {
-		method: 'POST',
-		body: {
-			videoUrl: videoUrl.value,
-			downloadId: downloadId,
-		},
-		responseType: 'blob',
-	});
+	const result = await window.electronAPI.downloadVideo(
+		videoUrl.value,
+		downloadId
+	);
+	if (!result.success) throw new Error(result.message);
 	downloadStatus.value = 'Video download completed!';
-
-	const contentDisposition = headers.get('Content-Disposition')!;
-	const filename = contentDisposition.match(/filename="(.+?)"/)![1];
-	saveAs(blob!, filename);
 };
 
 const handleSubmit = async () => {
@@ -90,11 +78,11 @@ const handleSubmit = async () => {
 	} catch (e) {
 		const error = e as Error;
 		console.error(`Error downloading video: ${error}`);
-		downloadStatus.value = 'Video download failed!'
+		downloadStatus.value = 'Video download failed!';
 		downloadError.value = error.message;
 	} finally {
 		isDownloading.value = false;
-		closeEventSource();
+		removeProgressListener();
 	}
 };
 </script>
@@ -108,6 +96,7 @@ const handleSubmit = async () => {
 					href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options"
 					target="_blank"
 					class="help-link"
+					tabindex="-1"
 				>
 					Help
 				</a>
@@ -131,16 +120,18 @@ const handleSubmit = async () => {
 				class="status-container"
 				:class="{ hidden: !downloadStatus && !downloadError }"
 			>
-				<div class="status-message" :class="{ hidden: !downloadStatus }">
-					{{ downloadStatus || '-' }}
-				</div>
-				<div class="error-message" :class="{ hidden: !downloadError }">
-					{{ downloadError || '-' }}
+				<div
+					class="status-message"
+					:class="{
+						error: downloadError,
+						hidden: !downloadError && !downloadStatus,
+					}"
+				>
+					{{ downloadError || downloadStatus || '-' }}
 				</div>
 			</div>
-
-			<!-- Progress messages container -->
 			<div
+				ref="progressContainerRef"
 				class="progress-container"
 				:class="{ hidden: !progressMessages.length }"
 			>
@@ -243,10 +234,7 @@ button:disabled {
 }
 
 .status-container {
-	--status-gap: 1rem;
-
-	position: relative;
-	padding: 1.5rem var(--status-gap);
+	padding: 1.5rem 1rem;
 	border-radius: 8px;
 	background-color: rgba(255, 255, 255, 0.1);
 	width: 100%;
@@ -256,14 +244,10 @@ button:disabled {
 	.status-message {
 		color: #4caf50;
 		font-weight: bold;
-	}
 
-	.error-message {
-		margin-top: 0.125rem;
-		position: absolute;
-		color: #f44336;
-		font-weight: bold;
-		width: calc(100% - var(--status-gap));
+		&.error {
+			color: #f44336;
+		}
 	}
 }
 
